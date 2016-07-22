@@ -12,10 +12,11 @@ import android.widget.ImageView;
 
 import com.example.cwx343067.imageloader.R;
 import com.example.cwx343067.imageloader.manager.image.ImageLoader;
+import com.example.cwx343067.imageloader.manager.image.ImageLoaderSingle;
 
 public class ImagetLoaderActivity extends AppCompatActivity {
     private ImageView imageView;
-    private ImageLoader mImageLoader;
+
     private final String picUrl = "http://img3.imgtn.bdimg.com/it/u=3765230617,2637142896&fm=21&gp=0.jpg";
 
     @Override
@@ -24,8 +25,6 @@ public class ImagetLoaderActivity extends AppCompatActivity {
         setContentView(R.layout.activity_imaget_loader);
         imageView = (ImageView) this.findViewById(R.id.showpicim);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        mImageLoader = new ImageLoader();
-        mImageLoader.initImageCache();
         setSupportActionBar(toolbar);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -36,7 +35,7 @@ public class ImagetLoaderActivity extends AppCompatActivity {
             }
         });
 
-        mImageLoader.displayImage(picUrl, imageView);
+        ImageLoaderSingle.IMAGELOADER.displayImage(this.getApplicationContext(), picUrl, imageView);
 
     }
 

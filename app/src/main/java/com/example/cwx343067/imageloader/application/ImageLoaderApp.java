@@ -10,5 +10,4 @@ public class ImageLoaderApp extends Application{
     // TODO 检测内存泄漏 ,LeakCanary
     // TODO 严苛模式监视错误
     // TODO ect其他一些需要初始化
-
 }

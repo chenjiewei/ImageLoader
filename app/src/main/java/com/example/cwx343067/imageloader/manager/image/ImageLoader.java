@@ -1,8 +1,8 @@
 package com.example.cwx343067.imageloader.manager.image;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.util.LruCache;
 import android.widget.ImageView;
 
 import java.net.HttpURLConnection;
@@ -15,46 +15,72 @@ import java.util.concurrent.Executors;
  */
 public class ImageLoader {
     // 图片缓存
-    private LruCache<String, Bitmap> mImageCache;
+    private ImageCacheInterface mImageCache = null;
     // 线程池
     private ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    // 上下文
+    private Context mContext = null;
 
-    public ImageLoader() {
+    public ImageLoader(Context context) {
+        mContext = context;
+        mImageCache = new MemoryImageCache();
     }
 
-    ;
-
-    public void initImageCache() {
-        // 计算可使用的最大内存
-        final int maxMemory = (int) Runtime.getRuntime().maxMemory() / 1024;
-        // 取四分之一作为缓存
-        final int cacheSize = maxMemory / 4;
-        // 初始化图片换成对象
-        mImageCache = new LruCache<String, Bitmap>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, Bitmap value) {
-                return value.getRowBytes() * value.getHeight() / 1024;
-            }
-        };
+    /**
+     * 注入缓存实现
+     *
+     * @param imageCacheInterface
+     */
+    public void setImageCacheInterface(ImageCacheInterface imageCacheInterface) {
+        mImageCache = imageCacheInterface;
     }
 
-    public void displayImage(final String url, final ImageView imageView) {
-        imageView.setTag(url);
+    /**
+     * 显示图片
+     *
+     * @param url
+     * @param imageView
+     */
+    public void displayImage(String url, ImageView imageView) {
+        Bitmap bitmap = mImageCache.getBitmap(url);
+        if (bitmap != null) {
+            imageView.setImageBitmap(bitmap);
+            return;
+        }
+        // 如果缓存没有，由网络下载
+        submitLoadRequest(url, imageView);
+
+    }
+
+    /**
+     * 提交任务到线程池中去获取数据
+     *
+     * @param imageUrl
+     * @param imageView
+     */
+    private void submitLoadRequest(final String imageUrl, final ImageView imageView) {
+        imageView.setTag(imageUrl);
         mExecutorService.submit(new Runnable() {
             @Override
             public void run() {
-                Bitmap bitmap = downloadImage(url);
+                Bitmap bitmap = downloadImage(imageUrl);
                 if (bitmap == null) {
                     return;
                 }
-                if (imageView.getTag().equals(url)) {
+                if (imageView.getTag().equals(imageUrl)) {
                     imageView.setImageBitmap(bitmap);
                 }
-                mImageCache.put(url, bitmap);
+                mImageCache.putBitmap(imageUrl, bitmap);
             }
         });
     }
 
+    /**
+     * 根据URL，下载图片
+     *
+     * @param imageUrl
+     * @return
+     */
     private Bitmap downloadImage(String imageUrl) {
         Bitmap bitmap = null;
         try {
@@ -65,7 +91,6 @@ public class ImageLoader {
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
-
         }
         return bitmap;
     }
